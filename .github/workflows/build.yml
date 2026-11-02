@@ -11,15 +11,23 @@ jobs:
     runs-on: macos-14
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
           fetch-depth: '0'
 
       - name: Set active Xcode path
         run: |
-          XCODE_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["xcode"]);')
-          sudo xcode-select -s /Applications/Xcode_$XCODE_VERSION.app/Contents/Developer
+          XCODE_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj.get("xcode", ""));')
+          XCODE_PATH="/Applications/Xcode_$XCODE_VERSION.app/Contents/Developer"
+          
+          if [ -d "$XCODE_PATH" ]; then
+            sudo xcode-select -s "$XCODE_PATH"
+            echo "Using Xcode version $XCODE_VERSION"
+          else
+            echo "Warning: Xcode path $XCODE_PATH does not exist. Falling back to default Xcode."
+            sudo xcode-select -s /Applications/Xcode.app
+          fi
 
       - name: Create canonical source directory
         run: |
